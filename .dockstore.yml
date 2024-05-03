@@ -1,0 +1,10 @@
+version: 1.0
+workflows:
+   - name: "train_chrombpnet"
+     subclass: WDL
+     primaryDescriptorPath: /train_chrombpnet/train_chrombpnet.wdl
+     filters:
+        branches:
+          - main
+        tags:
+          - /.*/

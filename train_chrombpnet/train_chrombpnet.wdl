@@ -30,7 +30,7 @@ task get_background_regions {
     File    blackRegions
   }
 
-  Int disk_size = 20 + size(peaks, "GB")
+  Int disk_size = 20 + ceil(size(peaks, "GB"))
   
   command {
   mkdir -p output

@@ -4,9 +4,9 @@ workflow train_chrombpnet {
   input {
     File fragments
     File peaks
-    File? genome = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta"
-    File? chrom_sizes = "gs://joneslab-240402-village-training-data/chrombpnet_references/hg38.chrom.subset.sizes"
-    File? black_regions = "gs://joneslab-240402-village-training-data/chrombpnet_references/blacklist.bed.gz"
+    File genome = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta"
+    File chrom_sizes = "gs://joneslab-240402-village-training-data/chrombpnet_references/hg38.chrom.subset.sizes"
+    File black_regions = "gs://joneslab-240402-village-training-data/chrombpnet_references/blacklist.bed.gz"
   }
 
   # TODO filter peaks against blacklist

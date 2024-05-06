@@ -13,11 +13,20 @@ workflow train_chrombpnet {
   
   call get_background_regions {
     input: 
-      genome = genome,
-      peaks = peaks,
-      chrom_sizes = chrom_sizes,
-      blackRegions = black_regions
-    }
+    genome = genome,
+    peaks = peaks,
+    chrom_sizes = chrom_sizes,
+    blacklist_regions = black_regions
+  }
+
+  call train_bias_model {
+    input:
+    genome = genome,
+    peaks = peaks,
+    chrom_sizes = chrom_sizes,
+    peaks = peaks,
+    non_peaks = get_background_regions.negatives
+    }    
 }
 
 
@@ -30,7 +39,7 @@ task get_background_regions {
     File    genome
     File    peaks
     File    chrom_sizes
-    File    blackRegions
+    File    blacklist_regions
   }
 
   Int disk_size = 20 + ceil(size(peaks, "GB"))
@@ -39,7 +48,7 @@ task get_background_regions {
   mkdir -p output
   export TQDM_DISABLE=1  # clean up output
   chrombpnet prep splits -c ${chrom_sizes} -tcr chr1 chr3 chr6 -vcr chr8 chr20 -op output/fold_0
-  chrombpnet prep nonpeaks -g ${genome} -p ${peaks} -c ${chrom_sizes} -fl output/fold_0.json -br ${blackRegions} -o output/training
+  chrombpnet prep nonpeaks -g ${genome} -p ${peaks} -c ${chrom_sizes} -fl output/fold_0.json -br ${blacklist_regions} -o output/training
   ls -R output
   }
 
@@ -64,18 +73,18 @@ task train_bias_model {
   input {
     File   fragments
     File   genome
-    File   chromeSize
+    File   chrom_sizes
     File   peaks
-    File   noPeaks
+    File   non_peaks
     File   chrFoldPath
   }
 
-  Int disk_size = 100 + ceil(size(peaks, "GB")) + ceil(size(noPeaks, "GB"))
+  Int disk_size = 100 + ceil(size(peaks, "GB")) + ceil(size(non_peaks, "GB"))
   
   command {
   set -euo pipefail
   mkdir -p output
-  chrombpnet bias pipeline -ifrag ~{fragments} -d ATAC -g ~{genome} -c ~{chromeSize} -p ~{peaks} -n ~{noPeaks} -fl ~{chrFoldPath} -b 0.5 -o output/
+  chrombpnet bias pipeline -ifrag ~{fragments} -d ATAC -g ~{genome} -c ~{chrom_sizes} -p ~{peaks} -n ~{non_peaks} -fl ~{chrFoldPath} -b 0.5 -o output/
   }
 
   output {

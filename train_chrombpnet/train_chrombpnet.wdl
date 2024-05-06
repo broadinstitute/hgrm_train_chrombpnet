@@ -10,15 +10,15 @@ workflow train_chrombpnet {
   }
 
   # TODO filter peaks against blacklist
-  
+
   call get_background_regions {
-    input: 
+    input:
     genome = genome,
     peaks = peaks,
     chrom_sizes = chrom_sizes,
     blacklist_regions = black_regions
   }
-  
+
   call train_bias_model {
     input:
     fragments = fragments,
@@ -28,7 +28,7 @@ workflow train_chrombpnet {
     peaks = peaks,
     non_peaks = get_background_regions.negatives,
     chr_folds = get_background_regions.folds
-    }    
+    }
 }
 
 
@@ -45,7 +45,7 @@ task get_background_regions {
   }
 
   Int disk_size = 20 + ceil(size(peaks, "GB"))
-  
+
   command {
   mkdir -p output
   export TQDM_DISABLE=1  # clean up output
@@ -82,7 +82,7 @@ task train_bias_model {
   }
 
   Int disk_size = 100 + ceil(size(peaks, "GB")) + ceil(size(non_peaks, "GB"))
-  
+
   command {
   set -euo pipefail
   mkdir -p output
@@ -97,12 +97,13 @@ task train_bias_model {
 
   runtime {
     docker: 'kundajelab/chrombpnet:latest'
-    memory: "128 GB"
+    memory: "64 GB"
+    cpu: 12
     bootDiskSizeGb: 50
     disks: "local-disk " + disk_size + " HDD"
     gpuType: "nvidia-tesla-v100"
     gpuCount: 1
-    nvidiaDriverVersion: "450.51.05" 
+    nvidiaDriverVersion: "450.51.05"
     maxRetries: 1
   }
 }

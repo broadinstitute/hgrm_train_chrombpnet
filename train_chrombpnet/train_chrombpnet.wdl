@@ -22,6 +22,9 @@ workflow train_chrombpnet {
 
 
 ##################################################
+# GET BACKGROUND REGIONS
+##################################################
+
 task get_background_regions {
   input {
     File    genome
@@ -34,6 +37,7 @@ task get_background_regions {
   
   command {
   mkdir -p output
+  export TQDM_DISABLE=1  # clean up output
   chrombpnet prep splits -c ${chrom_sizes} -tcr chr1 chr3 chr6 -vcr chr8 chr20 -op output/fold_0
   chrombpnet prep nonpeaks -g ${genome} -p ${peaks} -c ${chrom_sizes} -fl output/fold_0.json -br ${blackRegions} -o output/training
   ls -R output
@@ -49,5 +53,45 @@ task get_background_regions {
     memory: "16 GB"
     bootDiskSizeGb: 20
     disks: "local-disk " + disk_size + " HDD"
+  }
+}
+
+
+##################################################
+# TRAIN BIAS MODEL
+##################################################
+task train_bias_model {
+  input {
+    File   fragments
+    File   genome
+    File   chromeSize
+    File   peaks
+    File   noPeaks
+    File   chrFoldPath
+  }
+
+  Int disk_size = 100 + ceil(size(peaks, "GB")) + ceil(size(noPeaks, "GB"))
+  
+  command {
+  set -euo pipefail
+  mkdir -p output
+  chrombpnet bias pipeline -ifrag ~{fragments} -d ATAC -g ~{genome} -c ~{chromeSize} -p ~{peaks} -n ~{noPeaks} -fl ~{chrFoldPath} -b 0.5 -o output/
+  }
+
+  output {
+    File bias_model = "output/models/bias.h5"
+    File log = "output/logs/bias.log"
+    File evaluation = "output/evaluation/overall_report.pdf"
+  }
+
+  runtime {
+    docker: 'kundajelab/chrombpnet:latest'
+    memory: "128 GB"
+    bootDiskSizeGb: 50
+    disks: "local-disk " + disk_size + " HDD"
+    gpuType: "nvidia-tesla-v100"
+    gpuCount: 1
+    nvidiaDriverVersion: "450.51.05" 
+    maxRetries: 1
   }
 }

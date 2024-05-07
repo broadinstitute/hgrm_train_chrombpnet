@@ -6,24 +6,29 @@ workflow train_chrombpnet {
     File peaks
     File genome = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta"
     File chrom_sizes = "gs://joneslab-240402-village-training-data/chrombpnet_references/hg38.chrom.subset.sizes"
-    File black_regions = "gs://joneslab-240402-village-training-data/chrombpnet_references/blacklist.bed.gz"
+    File blacklist_regions = "gs://joneslab-240402-village-training-data/chrombpnet_references/blacklist.bed.gz"
   }
 
-  # TODO filter peaks against blacklist
+  call filter_peaks {
+    input:
+    peaks = peaks,
+    chrom_sizes = chrom_sizes,
+    blacklist_regions = blacklist_regions
+  }
 
   call get_background_regions {
     input:
     genome = genome,
-    peaks = peaks,
+    peaks = filter_peaks.filtered_peaks,
     chrom_sizes = chrom_sizes,
-    blacklist_regions = black_regions
+    blacklist_regions = blacklist_regions
   }
 
   call train_bias_model {
     input:
     fragments = fragments,
     genome = genome,
-    peaks = peaks,
+    peaks = filter_peaks.filtered_peaks,
     chrom_sizes = chrom_sizes,
     peaks = peaks,
     non_peaks = get_background_regions.negatives,
@@ -36,9 +41,41 @@ workflow train_chrombpnet {
     fragments = fragments,
     genome = genome,
     chrom_sizes = chrom_sizes,
-    peaks = peaks,
+    peaks = filter_peaks.filtered_peaks,
     non_peaks = get_background_regions.negatives,
     chr_folds = get_background_regions.folds
+  }
+}
+
+
+##################################################
+# FILTER PEAKS
+##################################################
+
+task filter_peaks {
+  input {
+    File    peaks
+    File    chrom_sizes
+    File    blacklist_regions
+  }
+
+  Int disk_size = 20 + 3 * ceil(size(peaks, "GB"))
+
+  command {
+  mkdir -p outputs
+  bedtools slop -i ~{blacklist_regions} -g ~{chrom_sizes} -b 1057 > temp.bed
+  bedtools intersect -v -a ~{peaks} -b temp.bed  > outputs/peaks_no_blacklist.bed
+  }
+
+  output {
+    File filtered_peaks = "outputs/peaks_no_blacklist.bed"
+  }
+
+  runtime {
+    docker: "quay.io/biocontainers/bedtools:2.24--1"
+    memory: "10 GB"
+    bootDiskSizeGb: 20
+    disks: "local-disk " + disk_size + " HDD"
   }
 }
 

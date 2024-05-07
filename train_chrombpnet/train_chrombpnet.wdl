@@ -28,7 +28,18 @@ workflow train_chrombpnet {
     peaks = peaks,
     non_peaks = get_background_regions.negatives,
     chr_folds = get_background_regions.folds
-    }
+  }
+
+  call train_factorized_model {
+    input:
+    bias_model = train_bias_model.bias_model,
+    fragments = fragments,
+    genome = genome,
+    chrom_sizes = chrom_sizes,
+    peaks = peaks,
+    non_peaks = get_background_regions.negatives,
+    chr_folds = get_background_regions.folds
+  }
 }
 
 
@@ -104,6 +115,58 @@ task train_bias_model {
     gpuType: "nvidia-tesla-t4"
     gpuCount: 1
     nvidiaDriverVersion: "450.51.05"
-    maxRetries: 1
   }
+}
+
+
+##################################################
+# TRAIN FACTORIZED MODEL
+##################################################
+task train_factorized_model {
+  input {
+    File   bias_model
+    File   fragments
+    File   genome
+    File   chrom_sizes
+    File   peaks
+    File   non_peaks
+    File   chr_folds
+  }
+
+  Int disk_size = 100 + ceil(size(peaks, "GB")) + ceil(size(non_peaks, "GB")) + ceil(size(bias_model, "GB"))
+
+  command {
+  set -euo pipefail
+  mkdir -p output
+  chrombpnet pipeline \
+        -ifrag ~{fragments} \
+        -d ATAC \
+        -g ~{genome} \
+        -c ~{chrom_sizes} \
+        -p ~{peaks} \
+        -n ~{non_peaks} \
+        -fl ~{chr_folds} \
+        -b ~{bias_model} \
+        -o output/
+  }
+
+  output {
+    File chrombpnet_model = "output/models/chrombnet.h5"
+    File chrombpnet_model_nobias = "output/models/chrombpnet_nobias.h5"
+    File bias_model_scaled = "output/models/bias_model_scaled.h5"
+    File log = "output/logs/chrombpnet.log"
+    File evaluation = "output/evaluation/overall_report.pdf"
+    File metrics = "output/evaluation/chrombpnet_metrics.json"
+  }
+
+  runtime {
+    docker: 'kundajelab/chrombpnet:latest'
+    memory: "256 GB"
+    cpu: 24
+    bootDiskSizeGb: 50
+    disks: "local-disk " + disk_size + " HDD"
+    gpuType: "nvidia-tesla-t4"
+    gpuCount: 1
+    nvidiaDriverVersion: "450.51.05"
+   }
 }

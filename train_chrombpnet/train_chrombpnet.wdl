@@ -97,8 +97,8 @@ task train_bias_model {
 
   runtime {
     docker: 'kundajelab/chrombpnet:latest'
-    memory: "64 GB"
-    cpu: 12
+    memory: "256 GB"
+    cpu: 24
     bootDiskSizeGb: 50
     disks: "local-disk " + disk_size + " HDD"
     gpuType: "nvidia-tesla-v100"

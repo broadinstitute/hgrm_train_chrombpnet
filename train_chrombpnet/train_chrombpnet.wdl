@@ -102,7 +102,7 @@ task train_bias_model {
     bootDiskSizeGb: 50
     disks: "local-disk " + disk_size + " HDD"
     gpuType: "nvidia-tesla-v100"
-    gpuCount: 1
+    gpuCount: 2
     nvidiaDriverVersion: "450.51.05"
     maxRetries: 1
   }

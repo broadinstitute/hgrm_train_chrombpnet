@@ -64,7 +64,8 @@ task filter_peaks {
   command {
   mkdir -p outputs
   bedtools slop -i ~{blacklist_regions} -g ~{chrom_sizes} -b 1057 > temp.bed
-  bedtools intersect -v -a ~{peaks} -b temp.bed  > outputs/peaks_no_blacklist.bed
+  # filter peaks that overlap blacklist, and also trim to 10 columns (narrowPeak format)
+  bedtools intersect -v -a ~{peaks} -b temp.bed  | cut -f 1-10 > outputs/peaks_no_blacklist.bed
   }
 
   output {

@@ -30,7 +30,7 @@ workflow train_chrombpnet {
     genome = genome,
     peaks = filter_peaks.filtered_peaks,
     chrom_sizes = chrom_sizes,
-    peaks = filtered_peaks.filtered_peaks,
+    peaks = filter_peaks.filtered_peaks,
     non_peaks = get_background_regions.negatives,
     chr_folds = get_background_regions.folds
   }

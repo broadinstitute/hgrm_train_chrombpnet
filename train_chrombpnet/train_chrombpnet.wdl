@@ -133,6 +133,8 @@ task train_bias_model {
 
   command {
   set -euo pipefail
+  pip install -U tqdm
+  export TQDM_MININTERVAL=30
   mkdir -p output
   chrombpnet bias pipeline -ifrag ~{fragments} -d ATAC -g ~{genome} -c ~{chrom_sizes} -p ~{peaks} -n ~{non_peaks} -fl ~{chr_folds} -b 0.5 -o output/
   }
@@ -175,6 +177,8 @@ task train_factorized_model {
   command {
   set -euo pipefail
   mkdir -p output
+  pip install -U tqdm
+  export TQDM_MININTERVAL=30
   chrombpnet pipeline \
         -ifrag ~{fragments} \
         -d ATAC \

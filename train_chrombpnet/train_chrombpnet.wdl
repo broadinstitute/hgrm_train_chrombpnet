@@ -180,6 +180,7 @@ task train_factorized_model {
   pip install -U tqdm
   export TQDM_MININTERVAL=30
   chrombpnet pipeline \
+             --early-stop 2 \
         -ifrag ~{fragments} \
         -d ATAC \
         -g ~{genome} \
@@ -189,6 +190,8 @@ task train_factorized_model {
         -fl ~{chr_folds} \
         -b ~{bias_model} \
         -o output/
+
+  ls -lR .
   }
 
   output {

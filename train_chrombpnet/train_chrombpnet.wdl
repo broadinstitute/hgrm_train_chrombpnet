@@ -133,7 +133,7 @@ task get_background_regions {
   export TQDM_DISABLE=1  # clean up output
   chrombpnet prep splits -c ${chrom_sizes} -tcr chr1 chr3 chr6 -vcr chr8 chr20 -op output/fold_0
   chrombpnet prep nonpeaks -g ${genome} -p ${peaks} -c ${chrom_sizes} -fl output/fold_0.json -br ${blacklist_regions} -o output/training
-  cp output/training/training_negatives.bed output/training/${file_prefix}.training_negatives.bed
+  cp output/training_negatives.bed output/${file_prefix}.training_negatives.bed
   }
 
   output {

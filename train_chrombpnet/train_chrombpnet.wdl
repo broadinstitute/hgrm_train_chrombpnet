@@ -180,7 +180,6 @@ task train_factorized_model {
   pip install -U tqdm
   export TQDM_MININTERVAL=30
   chrombpnet pipeline \
-             --early-stop 2 \
         -ifrag ~{fragments} \
         -d ATAC \
         -g ~{genome} \
@@ -195,7 +194,7 @@ task train_factorized_model {
   }
 
   output {
-    File chrombpnet_model = "output/models/chrombnet.h5"
+    File chrombpnet_model = "output/models/chrombpnet.h5"
     File chrombpnet_model_nobias = "output/models/chrombpnet_nobias.h5"
     File bias_model_scaled = "output/models/bias_model_scaled.h5"
     File log = "output/logs/chrombpnet.log"

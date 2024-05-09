@@ -7,6 +7,7 @@ workflow train_chrombpnet {
     File genome = "gs://gcp-public-data--broad-references/hg38/v0/Homo_sapiens_assembly38.fasta"
     File chrom_sizes = "gs://joneslab-240402-village-training-data/chrombpnet_references/hg38.chrom.subset.sizes"
     File blacklist_regions = "gs://joneslab-240402-village-training-data/chrombpnet_references/blacklist.bed.gz"
+    File? pretrained_bias_model
   }
 
   call filter_peaks {
@@ -24,19 +25,21 @@ workflow train_chrombpnet {
     blacklist_regions = blacklist_regions
   }
 
-  call train_bias_model {
-    input:
-    fragments = fragments,
-    genome = genome,
-    peaks = filter_peaks.filtered_peaks,
-    chrom_sizes = chrom_sizes,
-    non_peaks = get_background_regions.negatives,
-    chr_folds = get_background_regions.folds
+  if (! defined(pretrained_bias_model)) {
+    call train_bias_model {
+      input:
+      fragments = fragments,
+      genome = genome,
+      peaks = filter_peaks.filtered_peaks,
+      chrom_sizes = chrom_sizes,
+      non_peaks = get_background_regions.negatives,
+      chr_folds = get_background_regions.folds
+    }
   }
 
   call train_factorized_model {
     input:
-    bias_model = train_bias_model.bias_model,
+    bias_model = select_first([pretrained_bias_model, train_bias_model.bias_model]),  # ick
     fragments = fragments,
     genome = genome,
     chrom_sizes = chrom_sizes,
